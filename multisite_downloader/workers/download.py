@@ -411,9 +411,6 @@ class DownloadWorker(QThread):
         """
         if not is_bilibili_url(url) or self.cancelled:
             return False
-        # 兜底接口只返回 durl 单文件直链，不支持仅音频
-        if (self.current_settings().get("quality") or "") == "audio":
-            return False
         final_candidate = getattr(self._local, "final_candidate", "")
         if (
             final_candidate
@@ -905,8 +902,12 @@ class DownloadWorker(QThread):
         self.item_progress.emit(index, 100, "完成")
         return [str(output_path)]
 
-    def _extract_douyin_audio(self, index, source_path, output_path):
-        """从合并好的抖音视频里提取 MP3。"""
+    def _extract_audio_mp3(self, index, source_path, output_path):
+        """从已有视频文件中提取 MP3。"""
+        if not has_ffmpeg():
+            raise RuntimeError(
+                "提取音频需要 ffmpeg，请把 ffmpeg.exe 放到程序目录后重试。"
+            )
         self.item_progress.emit(index, 97, "提取音频...")
         result = subprocess.run(
             [
@@ -934,6 +935,10 @@ class DownloadWorker(QThread):
             detail = lines[-1] if lines else "未知错误"
             raise RuntimeError(f"ffmpeg 提取音频失败：{detail}")
 
+    def _extract_douyin_audio(self, index, source_path, output_path):
+        """从合并好的抖音视频里提取 MP3。"""
+        self._extract_audio_mp3(index, source_path, output_path)
+
     def download_bili_legacy(self, index, url):
         resolved_url = resolve_bilibili_url(url, self.current_settings())
         id_type, id_value = extract_video_id(resolved_url)
@@ -954,10 +959,11 @@ class DownloadWorker(QThread):
             cid = pages[0].get("cid")
             page_num = pages[0].get("page") or 1
         quality = self.current_settings().get("quality", "best")
-        if quality == "audio":
+        audio_only = quality == "audio"
+        if audio_only and not has_ffmpeg():
             raise RuntimeError(
-                "B站公开视频兜底接口不支持仅音频。\n"
-                "请配置 Cookie，并确认 ffmpeg 可用后重试。"
+                "B站未登录时导出 MP3 需要先把公开视频下载下来再提取音频。\n"
+                "请把 ffmpeg.exe 放到程序目录后重试。"
             )
         has_cookie = has_cookie_for_url(resolved_url, self.current_settings())
         # 如果用户在预览表选了具体格式（如 30080 / 30080+30280），从中解析出视频清晰度 qn
@@ -968,10 +974,18 @@ class DownloadWorker(QThread):
                 part.strip() for part in custom_format.split("+") if part.strip()
             ]
             if format_parts and all(part.startswith("302") for part in format_parts):
-                raise RuntimeError(
-                    "B站兜底接口只能下载音视频一体的 MP4，不能只取音频。\n"
-                    "请配置 Cookie 并使用 yt-dlp，或先下载 MP4 后用 ffmpeg 提取音频。"
-                )
+                if audio_only:
+                    # 兜底接口没有独立音频流；按公开视频下载后再提取音轨。
+                    custom_format = ""
+                    self.log.emit(
+                        "B站独立音频流需要登录；本次改为下载公开 MP4 后提取音频。"
+                    )
+                    format_parts = []
+                else:
+                    raise RuntimeError(
+                        "B站兜底接口只能下载音视频一体的 MP4，不能只取音频。\n"
+                        "请配置 Cookie 并使用 yt-dlp，或先下载 MP4 后用 ffmpeg 提取音频。"
+                    )
         qn_from_format = None
         if custom_format:
             for part in custom_format.split("+"):
@@ -1041,22 +1055,40 @@ class DownloadWorker(QThread):
             else title
         )
         # 按用户设置的文件名模板生成，与 yt-dlp 路径保持一致的命名风格
+        final_ext = "mp3" if audio_only else "mp4"
         filename = render_filename_template(
             self.current_settings().get("filename_template"),
             {
                 "title": title,
                 "id": id_value,
-                "ext": "mp4",
+                "ext": final_ext,
                 "uploader": (data.get("owner") or {}).get("name") or "",
                 "page": page_num,
                 "part": part_title,
             },
         )
         if not Path(filename).suffix:
-            filename = f"{filename}.mp4"
+            filename = f"{filename}.{final_ext}"
+        elif audio_only and Path(filename).suffix.lower() != ".mp3":
+            filename = f"{Path(filename).stem}.mp3"
         if len(pages) > 1:
-            filename = f"{Path(filename).stem}_P{page_num}_{sanitize_filename(part_title)}.mp4"
-        output_path = unique_path(download_dir / filename)
+            filename = (
+                f"{Path(filename).stem}_P{page_num}_"
+                f"{sanitize_filename(part_title)}.{final_ext}"
+            )
+        final_output_path = unique_path(download_dir / filename)
+        output_path = final_output_path
+        if audio_only:
+            # 公开接口没有独立音频流：先下载带音轨的 MP4，再提取成 MP3。
+            output_path = unique_path(
+                final_output_path.with_name(
+                    f"{final_output_path.stem}.source.mp4"
+                )
+            )
+            self._track_temp(str(output_path))
+            self.log.emit(
+                "B站未登录：下载公开视频后提取音轨，最高约 720P。"
+            )
         outputs = []
         part_paths = []
         try:
@@ -1084,7 +1116,12 @@ class DownloadWorker(QThread):
                                 self._throttle_transfer(rate_started, downloaded)
                                 if size:
                                     pct = downloaded / size * 100
-                                    self.item_progress.emit(index, pct, f"分段 {i+1}/{len(durl)}  {pct:.1f}%")
+                                    shown_pct = pct * 0.9 if audio_only else pct
+                                    self.item_progress.emit(
+                                        index,
+                                        shown_pct,
+                                        f"分段 {i+1}/{len(durl)}  {pct:.1f}%",
+                                    )
                     if len(durl) > 1:
                         outputs.append(str(part_path))
                     else:
@@ -1162,9 +1199,28 @@ class DownloadWorker(QThread):
                     pass
             outputs = [str(output_path)]
 
+        if audio_only:
+            if not Path(output_path).is_file():
+                raise RuntimeError("公开视频下载完成，但没有找到可提取音轨的文件。")
+            self.item_progress.emit(index, 95, "正在提取音频...")
+            try:
+                self._extract_audio_mp3(index, output_path, final_output_path)
+            except Exception:
+                for path in (output_path, final_output_path):
+                    try:
+                        Path(path).unlink()
+                    except OSError:
+                        pass
+                raise
+            try:
+                Path(output_path).unlink()
+            except OSError:
+                pass
+            outputs = [str(final_output_path)]
+
         if not outputs or not Path(outputs[0]).is_file():
             raise RuntimeError("下载完成但未找到有效的成品文件。")
-        self._finished_outputs.add(str(output_path))
+        self._finished_outputs.add(str(final_output_path))
 
         output_base = str(Path(outputs[0]).with_suffix(""))
         if not self.cancelled and self.current_settings().get("download_thumbnail"):

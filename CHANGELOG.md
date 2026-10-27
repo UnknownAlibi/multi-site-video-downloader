@@ -1,5 +1,22 @@
 # 更新日志
 
+## 1.1.2 - 2026-10-27
+
+### 新增
+
+- B站未登录时选择“仅音频”不再直接失败：先下载公开 MP4，再用 ffmpeg 提取 MP3，最高约 720P。
+- 已登录时仍优先使用 DASH 音频流，不受该回退影响。
+
+### 验证
+
+- 使用真实 B站视频完成未登录音频提取，得到 4:27 的 MP3，无残留源视频。
+- 141 项自动化测试通过，打包版版本资源更新为 `1.1.2`。
+
+### 产物
+
+- `dist/multi-site-video-downloader/multi-site-video-downloader.exe`
+- `dist/multi-site-video-downloader-1.1.2-win64.zip`
+
 ## 1.1.1 - 2026-10-25
 
 ### 修复

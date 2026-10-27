@@ -5,7 +5,7 @@
 - 产品名：**多站点视频下载器 / Multi-site Video Downloader**
 - 英文项目标识与仓库名：**multi-site-video-downloader**
 - Python 包：**multisite_downloader**
-- 版本：**1.1.1**（`multisite_downloader/__init__.py`）
+- 版本：**1.1.2**（`multisite_downloader/__init__.py`）
 - 最后实机回归：2026-10-25
 
 用户使用说明见 `README.md`，版本变更见 `CHANGELOG.md`。
@@ -23,8 +23,9 @@
 
 已通过：
 
-- 140 项自动化测试，包含无 ffmpeg 环境；打包版 `--self-test`、含空格路径启动、最终 exe 启动均通过。
+- 141 项自动化测试，包含无 ffmpeg 环境；打包版 `--self-test`、含空格路径启动、最终 exe 启动均通过。
 - B站游客预览与 720P 下载、封面、弹幕、限速、暂停/继续、取消清理。
+- B站未登录 MP3：下载公开 MP4 后提取音轨，真实视频 4:27 输出 MP3 且无源视频残留。
 - 抖音 4K/2K/1080P/720P/540P/智能读取，4K 流捕获，540P 与 MP3 实际下载，封面、预览和 mpv 播放。
 - 双任务并发队列、UI 暂停/继续、单任务重试、批量重试、队列恢复、历史搜索/筛选/导出。
 - 设置导入导出、Cookie 库删除、代理直连/无效代理/本地 CONNECT 代理、托盘最小化与退出。
@@ -128,14 +129,14 @@ $env:MULTISITE_SELF_TEST_URL = "https://www.bilibili.com/"
 3. `py -m PyInstaller downloader.spec`
 4. 将 `dist/multi-site-video-downloader/` 复制到干净目录启动。
 5. 验证：设置/历史/队列/Cookie 写入 exe 同级；ffmpeg 可用；预览、下载、历史、退出均正常。
-6. 验证文件属性中的版本为 `1.1.1`。
+6. 验证文件属性中的版本为 `1.1.2`。
 7. 更新 `multisite_downloader/__init__.py` 版本号时，同时更新 `version_info.txt` 和 README。
 
 ### GitHub 发布
 
 - [ ] 将 GitHub 仓库名改为 `multi-site-video-downloader`。
 - [ ] 更新本地 `origin` 指向新仓库地址。
-- [ ] 推送 `master`，创建 `v1.1.1` Release 并上传发行压缩包。
+- [ ] 推送 `master`，创建 `v1.1.2` Release 并上传发行压缩包。
 - [ ] 更新仓库简介为“多站点视频下载器 - Windows 开源视频下载工具”。
 
 ## 已知限制

@@ -769,6 +769,78 @@ def test_bilibili_legacy_merge_failure_cleans_temp(qt_app, tmp_path, monkeypatch
     assert sorted(path.name for path in tmp_path.iterdir()) == []
 
 
+def test_bilibili_legacy_audio_extracts_from_public_mp4(
+    qt_app, tmp_path, monkeypatch
+):
+    """未登录 B站选择仅音频时，应下载公开 MP4 再提取 MP3，而不是直接失败。"""
+    settings = dict(DEFAULT_SETTINGS)
+    settings["download_dir"] = str(tmp_path)
+    settings["quality"] = "audio"
+    settings["cookie_mode"] = "none"
+    settings["site_cookie_bilibili"] = ""
+    settings["cookie_file"] = ""
+    worker = DownloadWorker([], settings)
+
+    class FakeResponse:
+        headers = {"Content-Length": "100"}
+
+        def raise_for_status(self):
+            pass
+
+        def iter_content(self, chunk_size=262144):
+            yield b"video-and-audio"
+
+        def close(self):
+            pass
+
+    class FakeSession:
+        def get(self, *args, **kwargs):
+            return FakeResponse()
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(download_module, "has_cookie_for_url", lambda *a, **k: False)
+    monkeypatch.setattr(download_module, "has_ffmpeg", lambda: True)
+    worker.request_session = lambda: FakeSession()
+    monkeypatch.setattr(
+        download_module,
+        "bili_view",
+        lambda url, settings: {
+            "title": "音频测试",
+            "pages": [{"page": 1, "cid": 1}],
+            "owner": {"name": "UP"},
+        },
+    )
+    monkeypatch.setattr(
+        download_module,
+        "bili_playurl",
+        lambda *args, **kwargs: {
+            "quality": 64,
+            "durl": [{"url": "http://x/1", "size": 100}],
+        },
+    )
+
+    extracted = {}
+
+    def fake_extract(index, source_path, output_path):
+        assert Path(source_path).is_file()
+        assert not Path(output_path).exists()
+        extracted["source"] = Path(source_path)
+        Path(output_path).write_bytes(b"mp3-data")
+
+    worker._extract_audio_mp3 = fake_extract
+
+    outputs = worker.download_bili_legacy(0, BILI_URL)
+
+    assert len(outputs) == 1
+    output = Path(outputs[0])
+    assert output.suffix == ".mp3"
+    assert output.read_bytes() == b"mp3-data"
+    assert not extracted["source"].exists()
+    assert sorted(path.suffix for path in tmp_path.iterdir()) == [".mp3"]
+
+
 def test_audio_quality_requests_mp3(qt_app, monkeypatch):
     settings = dict(DEFAULT_SETTINGS)
     settings["quality"] = "audio"
