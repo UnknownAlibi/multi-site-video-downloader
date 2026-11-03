@@ -2,7 +2,7 @@
 
 一个面向 Windows 的开源桌面视频下载工具。项目采用描述性的开源项目命名，不绑定单一站点；入口是 `gui_download_qt.py`，支持 B站、抖音、YouTube、Vimeo、X 等 yt-dlp 可识别的站点。
 
-当前版本：**1.1.2**（2026-10-27）
+当前版本：**1.1.3**（2026-11-03）
 
 ## 功能
 
@@ -110,7 +110,7 @@ GitHub Actions 会在 Windows 上运行同一套测试，见 `.github/workflows/
 
 ## 发布状态
 
-1.1.2 已完成核心功能实机回归，详细记录见 [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)。B站高清登录、真实外部代理成功路径和干净机器环境仍需在正式发布前补测。
+1.1.3 沿用 1.1.2 的实机回归结果重新打包，并更新内置 yt-dlp 至 2026.10.21。打包版自检、含中文/空格路径自检均通过，详见 [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)。B站高清登录、真实外部代理成功路径和干净机器环境仍需在正式发布前补测。
 
 ## 已知限制
 
@@ -121,6 +121,12 @@ GitHub Actions 会在 Windows 上运行同一套测试，见 `.github/workflows/
 - 抖音内置预览只生成前 5 分钟；完整内容请下载后播放。
 - 代理测试只检查 B站连通性，不代表目标站点一定可访问。
 - 第三方依赖许可见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)；公开发行前请先确认 PyQt5 等依赖的授权要求。
+
+## 许可证
+
+本项目以 GNU General Public License v3.0 发布，详见 [LICENSE](LICENSE)。
+
+由于使用 PyQt5 的 GPL 版本，分发二进制文件时需要同时提供对应源码，并保留第三方许可声明。
 
 ## 更新日志
 

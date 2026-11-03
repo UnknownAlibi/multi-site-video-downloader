@@ -5,8 +5,9 @@
 - 产品名：**多站点视频下载器 / Multi-site Video Downloader**
 - 英文项目标识与仓库名：**multi-site-video-downloader**
 - Python 包：**multisite_downloader**
-- 版本：**1.1.2**（`multisite_downloader/__init__.py`）
-- 最后实机回归：2026-10-25
+- 版本：**1.1.3**（`multisite_downloader/__init__.py`）
+- 最后完整实机回归：2026-10-25
+- 1.1.3 打包验证：2026-11-03（141 项自动化测试）
 
 用户使用说明见 `README.md`，版本变更见 `CHANGELOG.md`。
 
@@ -18,6 +19,18 @@
 - 任务系统：持久化队列、逐任务设置快照、暂停/取消、单任务重试、批量重试、删除、排序、任务设置编辑。
 - 数据与诊断：Cookie 库管理、代理连通性测试、历史搜索/筛选、版本与诊断信息复制、日志轮转、临时文件清理。
 - 播放：可选 mpv 内嵌播放，抖音预览和已完成本地文件都走同一套可选依赖策略。
+
+## 1.1.3 打包验证（2026-11-03）
+
+- 141 项自动化测试通过。
+- PyInstaller 1.1.3 构建成功，exe 版本资源为 `1.1.3`。
+- 打包版 `--self-test` 通过：yt-dlp 2026.10.21、ffmpeg、Chrome、主窗口构建均正常。
+- 复制到含中文和空格的路径后再次自检通过。
+- 本机 `cookies.txt` 的 B站 `SESSDATA` 已失效（`isLogin: false`），登录态 1080P+/字幕/仅音频仍无法完成回归。
+- 产物：
+  - `dist/multi-site-video-downloader/multi-site-video-downloader.exe`
+  - `dist/multi-site-video-downloader-1.1.3-win64.zip`
+  - `dist/multi-site-video-downloader-1.1.3-win64.zip.sha256`
 
 ## 实机回归记录（2026-10-25）
 
@@ -129,15 +142,16 @@ $env:MULTISITE_SELF_TEST_URL = "https://www.bilibili.com/"
 3. `py -m PyInstaller downloader.spec`
 4. 将 `dist/multi-site-video-downloader/` 复制到干净目录启动。
 5. 验证：设置/历史/队列/Cookie 写入 exe 同级；ffmpeg 可用；预览、下载、历史、退出均正常。
-6. 验证文件属性中的版本为 `1.1.2`。
+6. 验证文件属性中的版本为 `1.1.3`。
 7. 更新 `multisite_downloader/__init__.py` 版本号时，同时更新 `version_info.txt` 和 README。
 
 ### GitHub 发布
 
-- [ ] 将 GitHub 仓库名改为 `multi-site-video-downloader`。
-- [ ] 更新本地 `origin` 指向新仓库地址。
-- [ ] 推送 `master`，创建 `v1.1.2` Release 并上传发行压缩包。
-- [ ] 更新仓库简介为“多站点视频下载器 - Windows 开源视频下载工具”。
+- [x] 将 GitHub 仓库名改为 `multi-site-video-downloader`。
+- [x] 更新本地 `origin` 指向新仓库地址。
+- [x] 推送 `master`，创建 `v1.1.3` Release 并上传发行压缩包。
+- [x] 更新仓库简介为“多站点视频下载器 - Windows 开源视频下载工具”。
+- [x] 项目许可证确定为 GPL-3.0，并添加 `LICENSE`。
 
 ## 已知限制
 
@@ -156,4 +170,4 @@ $env:MULTISITE_SELF_TEST_URL = "https://www.bilibili.com/"
 - 不要把 `settings.json`、`cookies/`、`cookies.txt`、`download/`、`dist/`、`build/` 提交到 git。
 - 不要在日志、截图或 Issue 中暴露 Cookie、代理账号密码或个人信息。
 - PyQt5 为 GPL v3/商业双许可；公开发行前必须确定项目许可证并满足 PyQt5/Qt/FFmpeg/mpv 的分发要求，详见 `THIRD_PARTY_NOTICES.md`。
-- 当前仓库尚未声明项目自身的开源许可证，这是公开发布前需要维护者决定的事项。
+- 本项目以 GPL-3.0 发布，详见 `LICENSE`；分发二进制时需提供对应源码并保留第三方许可声明。
