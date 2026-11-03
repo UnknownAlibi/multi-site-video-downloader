@@ -6,11 +6,13 @@
 
 - 内置 yt-dlp 升级到 2026.10.21，改善 YouTube 和通用站点解析。
 - 重新构建 Windows 发行包。
+- 新增 Windows 安装程序，包含开始菜单、可选桌面快捷方式和卸载程序。
 
 ### 验证
 
 - 141 项自动化测试通过。
 - 打包版 `--self-test` 通过：依赖、ffmpeg、Chrome、界面构建均正常。
+- 安装包静默安装、安装后自检、卸载、开始菜单清理均通过。
 - 含中文和空格的安装路径下自检通过。
 - 当前 `cookies.txt` 的 B站 `SESSDATA` 已失效（`isLogin: false`），登录态 1080P+ 回归仍缺有效账号。
 
@@ -18,6 +20,7 @@
 
 - `dist/multi-site-video-downloader/multi-site-video-downloader.exe`
 - `dist/multi-site-video-downloader-1.1.3-win64.zip`
+- `dist/multi-site-video-downloader-1.1.3-setup.exe`
 
 ## 1.1.2 - 2026-10-27
 

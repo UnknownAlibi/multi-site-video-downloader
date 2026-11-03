@@ -150,6 +150,7 @@ $env:MULTISITE_SELF_TEST_URL = "https://www.bilibili.com/"
 - [x] 将 GitHub 仓库名改为 `multi-site-video-downloader`。
 - [x] 更新本地 `origin` 指向新仓库地址。
 - [x] 推送 `master`，创建 `v1.1.3` Release 并上传发行压缩包。
+- [x] 生成并上传 `multi-site-video-downloader-1.1.3-setup.exe` 安装包。
 - [x] 更新仓库简介为“多站点视频下载器 - Windows 开源视频下载工具”。
 - [x] 项目许可证确定为 GPL-3.0，并添加 `LICENSE`。
 

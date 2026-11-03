@@ -4,6 +4,14 @@
 
 当前版本：**1.1.3**（2026-11-03）
 
+## 下载
+
+- 安装版（推荐）：从 Releases 下载 `multi-site-video-downloader-1.1.3-setup.exe`
+- 免安装版：下载 `multi-site-video-downloader-1.1.3-win64.zip`
+- 发布页：<https://github.com/UnknownAlibi/multi-site-video-downloader/releases/latest>
+
+安装包默认安装到当前用户目录，不需要管理员权限，包含开始菜单快捷方式、可选桌面快捷方式和卸载程序。
+
 ## 功能
 
 - 粘贴链接自动解析，支持多行批量输入和从文件导入链接。
@@ -105,6 +113,9 @@ GitHub Actions 会在 Windows 上运行同一套测试，见 `.github/workflows/
 4. 产物位于 `dist/multi-site-video-downloader/`，运行 `multi-site-video-downloader.exe`。
 5. 发行时打包整个目录（含 `_internal`）。用户数据写在 exe 同级；ffmpeg 可放在 exe 同级覆盖 `_internal/ffmpeg.exe`。
 6. 可运行 `multi-site-video-downloader.exe --self-test` 检查依赖、ffmpeg、浏览器与界面构建，结果写入同级 `self_test.log`。
+7. 安装 Inno Setup 6。
+8. 编译安装包：`& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" installer.iss`。
+9. 安装包输出到 `dist/multi-site-video-downloader-<版本>-setup.exe`。
 
 版本号定义在 `multisite_downloader/__init__.py`，打包版本资源在 `version_info.txt`。
 
