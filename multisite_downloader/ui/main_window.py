@@ -475,9 +475,9 @@ class MainWindow(QMainWindow):
             )
         brand_text = QVBoxLayout()
         brand_text.setSpacing(0)
-        logo = QLabel("多站点")
+        logo = QLabel("多站点视频下载器")
         logo.setObjectName("logoTitle")
-        subtitle = QLabel("视频下载器")
+        subtitle = QLabel("开源视频下载器")
         subtitle.setObjectName("logoSubtitle")
         brand_text.addWidget(logo)
         brand_text.addWidget(subtitle)
@@ -573,9 +573,12 @@ class MainWindow(QMainWindow):
         super().resizeEvent(event)
         # 窗口较窄时收起右侧看板栏，保证主操作区不被挤压
         if hasattr(self, "right_panel"):
-            visible = self.width() >= 1180
-            if self.right_panel.isVisible() != visible:
-                self.right_panel.setVisible(visible)
+            self.right_panel.setVisible(self.width() >= 1180)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if hasattr(self, "right_panel"):
+            self.right_panel.setVisible(self.width() >= 1180)
 
     # ---------- 下载页 ----------
 
@@ -891,7 +894,7 @@ class MainWindow(QMainWindow):
 
         separator = QFrame()
         separator.setObjectName("vSep")
-        separator.setFixedSize(1, 84)
+        separator.setFixedSize(1, 96)
         separator.setStyleSheet("background: rgba(220, 233, 249, 0.95);")
 
         format_group = QVBoxLayout()
@@ -916,7 +919,7 @@ class MainWindow(QMainWindow):
         ):
             card = ChoiceCard(
                 value, title, subtitle, detail,
-                width=96, height=84, icon_kind=icon,
+                width=96, height=96, icon_kind=icon,
             )
             card.clicked.connect(self.select_format)
             card.cleared.connect(lambda _value: self.select_format("video"))
@@ -1057,8 +1060,8 @@ class MainWindow(QMainWindow):
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.show_task_context_menu)
         self.table.doubleClicked.connect(self.on_task_double_clicked)
-        self.table.setMinimumHeight(108)
-        self.table.setMaximumHeight(158)
+        self.table.setMinimumHeight(44)
+        self.table.setMaximumHeight(140)
         self._set_roomy_rows(self.table)
         self.table.verticalHeader().setDefaultSectionSize(44)
         queue_layout.addWidget(self.table)
@@ -1084,20 +1087,12 @@ class MainWindow(QMainWindow):
         self.log_edit.setMaximumHeight(84)
         self.log_edit.setVisible(False)
         queue_layout.addWidget(self.log_edit)
-        queue_card.setMaximumHeight(258)
+        queue_card.setMaximumHeight(300)
 
+        layout.addWidget(queue_card)
         layout.addStretch()
         scroll.setWidget(container)
-
-        # 队列固定在底部，滚动只作用于输入 / 预览 / 设置，保证进度始终可见
-        left = QWidget()
-        left.setObjectName("pageRoot")
-        left_layout = QVBoxLayout(left)
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(12)
-        left_layout.addWidget(scroll, 1)
-        left_layout.addWidget(queue_card)
-        outer.addWidget(left, 1)
+        outer.addWidget(scroll, 1)
         outer.addWidget(self._build_right_panel())
         self.content_stack.addWidget(page)
 
@@ -1368,7 +1363,7 @@ class MainWindow(QMainWindow):
                 )
             card = ChoiceCard(
                 value, title, subtitle, detail,
-                width=96, height=84, badge=badge,
+                width=96, height=96, badge=badge,
             )
             card.clicked.connect(self.select_quality)
             card.cleared.connect(lambda _value: self.select_quality("best"))
@@ -1548,6 +1543,9 @@ class MainWindow(QMainWindow):
     def _refresh_queue_count(self):
         if hasattr(self, "queue_count_label"):
             self.queue_count_label.setText(str(self.table.rowCount()))
+        if hasattr(self, "table"):
+            rows = self.table.rowCount()
+            self.table.setFixedHeight(max(44, min(rows * 44, 140)))
 
     # ---------- 历史页 ----------
 
@@ -2585,7 +2583,7 @@ class MainWindow(QMainWindow):
             invalidate_bili_login_cache()
             self.append_log(f"扫码登录成功，Cookie 已保存: {dialog.cookie_file_path}")
             self.statusBar().showMessage("扫码登录成功", 5000)
-            if reparse:
+            if reparse or self.input_edit.toPlainText().strip():
                 self.append_log("登录成功，正在重新解析以获取高清格式")
                 self.start_preview(force=True)
             else:
@@ -2740,7 +2738,10 @@ class MainWindow(QMainWindow):
         self.preview_stats_label.setText(stats)
         pages = info.get("pages") or []
         self.preview_pages_label.setText(f"{len(pages)} P" if pages else "单 P")
-        self.preview_source_label.setText(info.get("source") or "-")
+        source_text = info.get("source") or "-"
+        if info.get("login_ok") and detect_site(info.get("url") or "") == SITE_BILIBILI:
+            source_text = "B站登录"
+        self.preview_source_label.setText(source_text)
         self.preview_url_label.setText(info.get("url") or "-")
         note = info.get("note") or "-"
         if detect_site(info.get("url") or "") == SITE_DOUYIN:

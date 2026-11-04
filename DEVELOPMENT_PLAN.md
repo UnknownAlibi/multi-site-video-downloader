@@ -5,9 +5,9 @@
 - 产品名：**多站点视频下载器 / Multi-site Video Downloader**
 - 英文项目标识与仓库名：**multi-site-video-downloader**
 - Python 包：**multisite_downloader**
-- 版本：**1.1.3**（`multisite_downloader/__init__.py`）
+- 版本：**1.1.4**（`multisite_downloader/__init__.py`）
 - 最后完整实机回归：2026-10-25
-- 1.1.3 打包验证：2026-11-03（141 项自动化测试）
+- 1.1.4 修复验证：2026-11-04（142 项自动化测试）
 
 用户使用说明见 `README.md`，版本变更见 `CHANGELOG.md`。
 
@@ -142,15 +142,15 @@ $env:MULTISITE_SELF_TEST_URL = "https://www.bilibili.com/"
 3. `py -m PyInstaller downloader.spec`
 4. 将 `dist/multi-site-video-downloader/` 复制到干净目录启动。
 5. 验证：设置/历史/队列/Cookie 写入 exe 同级；ffmpeg 可用；预览、下载、历史、退出均正常。
-6. 验证文件属性中的版本为 `1.1.3`。
+6. 验证文件属性中的版本为 `1.1.4`。
 7. 更新 `multisite_downloader/__init__.py` 版本号时，同时更新 `version_info.txt` 和 README。
 
 ### GitHub 发布
 
 - [x] 将 GitHub 仓库名改为 `multi-site-video-downloader`。
 - [x] 更新本地 `origin` 指向新仓库地址。
-- [x] 推送 `master`，创建 `v1.1.3` Release 并上传发行压缩包。
-- [x] 生成并上传 `multi-site-video-downloader-1.1.3-setup.exe` 安装包。
+- [x] 推送 `master`，创建 `v1.1.4` Release 并上传发行压缩包。
+- [x] 生成并上传 `multi-site-video-downloader-1.1.4-setup.exe` 安装包。
 - [x] 更新仓库简介为“多站点视频下载器 - Windows 开源视频下载工具”。
 - [x] 项目许可证确定为 GPL-3.0，并添加 `LICENSE`。
 

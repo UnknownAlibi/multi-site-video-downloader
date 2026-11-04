@@ -144,6 +144,18 @@ def remove_domain_cookie(domain):
         return False
 
 
+def normalize_session_cookies(jar):
+    """Netscape 中 expires=0 表示 session cookie，requests 会误判为过期。
+
+    加载后把 0/-1 过期时间改成 None，确保 SESSDATA 等登录 Cookie 会真正发送。
+    """
+    for cookie in jar or []:
+        if cookie.expires is not None and cookie.expires <= 0:
+            cookie.expires = None
+            cookie.discard = True
+    return jar
+
+
 def save_cookie_jar(domain, cookies):
     """把浏览器读取到的 Cookie 保存到 Cookie 库，便于下次直接复用。"""
     path = cookie_store_path(domain)

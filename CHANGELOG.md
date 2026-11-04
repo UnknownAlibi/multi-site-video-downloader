@@ -1,5 +1,32 @@
 # 更新日志
 
+## 1.1.4 - 2026-11-04
+
+### 修复
+
+- 修复 B站扫码登录后仍显示“未登录”：Netscape 文件中的 session cookie（`expires=0`）被 `requests` 误判为过期并丢弃，加载时改为真正的 session cookie。
+- 扫码登录成功后自动重新解析当前视频，登录状态和可用画质立即刷新。
+- 预览来源在登录后显示“B站登录”，不再显示“未登录”。
+
+### 界面
+
+- 1080 宽度下自动收起右侧看板，避免主内容被挤压。
+- 下载队列移入滚动区，窄窗口下下载设置不再被队列截断。
+- 画质/格式卡片加大到 96×96，5 个画质与 MP4/MP3 保持一行。
+- 品牌名改为单行，右侧保存路径和状态文字加大。
+
+### 验证
+
+- 142 项自动化测试通过。
+- 真实 B站 Cookie 验证 `isLogin: true`，预览来源显示“B站登录”。
+- 1080×720 与 1280×860 实机渲染检查通过。
+
+### 产物
+
+- `dist/multi-site-video-downloader/multi-site-video-downloader.exe`
+- `dist/multi-site-video-downloader-1.1.4-win64.zip`
+- `dist/multi-site-video-downloader-1.1.4-setup.exe`
+
 ## 1.1.3 - 2026-11-03
 
 ### 更新

@@ -242,11 +242,11 @@ class ChoiceCard(QFrame):
         self.setCursor(Qt.PointingHandCursor)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(6, 6, 6, 6)
-        layout.setSpacing(6)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(5)
 
         self.tile = QLabel()
-        self.tile.setFixedSize(26, 26)
+        self.tile.setFixedSize(24, 24)
         self.tile.setAlignment(Qt.AlignCenter)
         self.tile.setAttribute(Qt.WA_TransparentForMouseEvents)
         layout.addWidget(self.tile, 0, Qt.AlignVCenter)
@@ -318,8 +318,8 @@ class ChoiceCard(QFrame):
             else:
                 background = tile_blue
                 icon_color = BLUE
-            self.tile.setPixmap(make_tool_icon(self._icon_kind, icon_color).pixmap(15, 15))
-            self.tile.setStyleSheet(f"background: {background}; border-radius: 7px;")
+            self.tile.setPixmap(make_tool_icon(self._icon_kind, icon_color).pixmap(14, 14))
+            self.tile.setStyleSheet(f"background: {background}; border-radius: 6px;")
             return
 
         if self._selected:
@@ -336,7 +336,7 @@ class ChoiceCard(QFrame):
         self.tile.setFont(badge_font)
         self.tile.setText(self._badge)
         self.tile.setStyleSheet(
-            f"background: {background}; border-radius: 7px; color: {color};"
+            f"background: {background}; border-radius: 6px; color: {color};"
             " font-size: 9px; font-weight: 700;"
         )
 

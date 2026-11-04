@@ -137,7 +137,7 @@ QScrollArea, QScrollArea > QWidget > QWidget {
     border-bottom-left-radius: 18px;
 }
 #logoTitle {
-    font-size: 17px;
+    font-size: 14px;
     font-weight: 800;
     color: $INK;
     background: transparent;
@@ -273,7 +273,7 @@ QScrollArea, QScrollArea > QWidget > QWidget {
     background: transparent;
 }
 #sidePath {
-    font-size: 10px;
+    font-size: 11px;
     color: $INK_SOFT;
     background: transparent;
 }

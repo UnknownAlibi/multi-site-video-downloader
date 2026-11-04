@@ -467,6 +467,33 @@ class TestCookieDomainStore:
         assert registrable_domain("www.bbc.co.uk") == "bbc.co.uk"
         assert registrable_domain("a.b.example.com") == "example.com"
 
+    def test_session_cookie_expiry_is_cleared(self):
+        from http.cookiejar import Cookie
+
+        from multisite_downloader.cookies import normalize_session_cookies
+
+        cookie = Cookie(
+            0,
+            "SESSDATA",
+            "abc",
+            None,
+            False,
+            ".bilibili.com",
+            True,
+            False,
+            "/",
+            True,
+            False,
+            0,
+            False,
+            None,
+            None,
+            {},
+        )
+        normalize_session_cookies([cookie])
+        assert cookie.expires is None
+        assert cookie.discard is True
+
     def test_store_lookup(self, tmp_path, monkeypatch):
         import multisite_downloader.cookies as cookies
         from multisite_downloader.net import apply_cookie_and_proxy_options

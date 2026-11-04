@@ -17,7 +17,11 @@ from .config import (
     BILIBILI_PLAYURL_API,
     BILIBILI_VIEW_API,
 )
-from .cookies import find_domain_cookie_file, save_cookie_jar
+from .cookies import (
+    find_domain_cookie_file,
+    normalize_session_cookies,
+    save_cookie_jar,
+)
 from .errors import format_error
 from .logs import write_runtime_log
 from .net import std_headers
@@ -34,6 +38,7 @@ def _load_cookie_jar(path):
             return None
         jar = MozillaCookieJar(str(path))
         jar.load(ignore_discard=True, ignore_expires=True)
+        normalize_session_cookies(jar)
         # RequestsCookieJar 提供 get(domain=...) 等接口，直接给 Session 使用更稳妥
         result = requests.cookies.RequestsCookieJar()
         for cookie in jar:
@@ -119,7 +124,7 @@ def _bili_session_with_jar(settings, jar):
     if proxy:
         session.proxies.update({"http": proxy, "https": proxy})
     if jar is not None:
-        session.cookies = jar
+        session.cookies = normalize_session_cookies(jar)
     session.headers.update(std_headers())
     return session
 
