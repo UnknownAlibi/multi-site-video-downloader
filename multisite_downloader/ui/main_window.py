@@ -106,6 +106,7 @@ from .widgets import (
     ChoiceCard,
     CoverLabel,
     ImageSlot,
+    NoTextDelegate,
     QueueProgress,
     SkyBackground,
     SoftCard,
@@ -1072,6 +1073,7 @@ class MainWindow(QMainWindow):
         self.table.setColumnWidth(1, 92)
         self.table.setColumnWidth(2, 190)
         self.table.setColumnWidth(3, 300)
+        self.table.setItemDelegateForColumn(1, NoTextDelegate(self.table))
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setAlternatingRowColors(False)
@@ -4182,7 +4184,13 @@ class MainWindow(QMainWindow):
             card.setEnabled(enabled)
 
     def set_cell(self, row, col, text):
-        # 进度列由 QueueProgress 自绘；底层 item 文字会和它重影。
+        # 状态列保留文字给统计，但由 delegate 隐藏绘制；进度列只由自绘控件显示。
+        if col == 1 and self.table.cellWidget(row, col) is not None:
+            item = self.table.item(row, col)
+            if item is not None:
+                item.setText(text)
+                item.setData(Qt.UserRole, text)
+            return
         if col == 2 and self.table.cellWidget(row, col) is not None:
             return
         item = self.table.item(row, col)
@@ -4197,18 +4205,33 @@ class MainWindow(QMainWindow):
         progress = QueueProgress()
         progress.set_value(0, "等待开始")
         self.table.setCellWidget(row, 2, progress)
-        # 这两列由自定义控件绘制，底层 item 文字必须透明，否则会重影
-        for column in (1, 2):
-            item = self.table.item(row, column)
-            if item is not None:
-                item.setForeground(QColor(0, 0, 0, 0))
-                if column == 2:
-                    item.setText("")
+        # 状态列由 delegate 隐藏文字，进度列只保留自绘控件。
+        status_item = self.table.item(row, 1)
+        if status_item is not None:
+            status_item.setText(status)
+            status_item.setData(Qt.UserRole, status)
+            status_item.setForeground(QColor(0, 0, 0, 0))
+        progress_item = self.table.item(row, 2)
+        if progress_item is not None:
+            progress_item.setText("")
 
     def _set_row_status(self, row, status):
         cell = self.table.cellWidget(row, 1)
         if isinstance(cell, StatusCell):
             cell.set_status(status)
+        item = self.table.item(row, 1)
+        if item is not None:
+            item.setText(status)
+            item.setData(Qt.UserRole, status)
+
+    def _queue_status(self, row):
+        cell = self.table.cellWidget(row, 1)
+        if isinstance(cell, StatusCell):
+            return cell.status()
+        item = self.table.item(row, 1)
+        if item is not None:
+            return str(item.data(Qt.UserRole) or item.text() or "等待")
+        return "等待"
 
     def _set_row_progress(self, row, percent, detail):
         cell = self.table.cellWidget(row, 2)
@@ -4249,8 +4272,7 @@ class MainWindow(QMainWindow):
         """
         total = done = 0
         for row in range(self.table.rowCount()):
-            item = self.table.item(row, 1)
-            state = item.text() if item else "等待"
+            state = self._queue_status(row)
             if state in self.QUEUE_EXCLUDED_STATES:
                 continue
             total += 1
@@ -4336,8 +4358,7 @@ class MainWindow(QMainWindow):
         if index >= self.table.rowCount():
             return
         self._task_progress.pop(index, None)
-        item = self.table.item(index, 1)
-        current = item.text() if item else "等待"
+        current = self._queue_status(index)
         status = "已删除" if "删除" in (reason or "") else "已跳过"
         if current in self.QUEUE_EXCLUDED_STATES:
             status = current
@@ -4357,8 +4378,7 @@ class MainWindow(QMainWindow):
         if index >= self.table.rowCount():
             return
         self._task_progress.pop(index, None)
-        item = self.table.item(index, 1)
-        current = item.text() if item else "等待"
+        current = self._queue_status(index)
         if current not in self.QUEUE_FINISHED_STATES and current not in self.QUEUE_EXCLUDED_STATES:
             self.set_cell(index, 1, "已取消")
             self.set_cell(index, 2, "已取消")
@@ -4392,9 +4412,9 @@ class MainWindow(QMainWindow):
                 self._update_mascot_by_state("downloading")
             self.setWindowTitle(title)
             return
-        failed = sum(1 for r in range(self.table.rowCount()) if self.table.item(r, 1) and self.table.item(r, 1).text() == "失败")
-        cancelled = sum(1 for r in range(self.table.rowCount()) if self.table.item(r, 1) and self.table.item(r, 1).text() == "已取消")
-        waiting = sum(1 for r in range(self.table.rowCount()) if self.table.item(r, 1) and self.table.item(r, 1).text() == "等待")
+        failed = sum(1 for r in range(self.table.rowCount()) if self._queue_status(r) == "失败")
+        cancelled = sum(1 for r in range(self.table.rowCount()) if self._queue_status(r) == "已取消")
+        waiting = sum(1 for r in range(self.table.rowCount()) if self._queue_status(r) == "等待")
         if waiting:
             title = f"{self.base_window_title} - 待下载 ({done}/{total})"
             self._update_mascot_by_state("idle")
@@ -4460,15 +4480,15 @@ class MainWindow(QMainWindow):
             return
         failed_rows = [
             r for r in range(self.table.rowCount())
-            if self.table.item(r, 1) and self.table.item(r, 1).text() == "失败"
+            if self._queue_status(r) == "失败"
         ]
         cancelled_rows = [
             r for r in range(self.table.rowCount())
-            if self.table.item(r, 1) and self.table.item(r, 1).text() == "已取消"
+            if self._queue_status(r) == "已取消"
         ]
         waiting_rows = [
             r for r in range(self.table.rowCount())
-            if self.table.item(r, 1) and self.table.item(r, 1).text() == "等待"
+            if self._queue_status(r) == "等待"
         ]
         all_finished = not failed_rows and not cancelled_rows and not waiting_rows
         if ok and all_finished:
@@ -4701,15 +4721,27 @@ class MainWindow(QMainWindow):
     def copy_task_error(self, row):
         if row < 0 or row >= self.table.rowCount():
             return
-        item = self.table.item(row, 2)
-        text = item.text() if item else ""
+        cell = self.table.cellWidget(row, 2)
+        if isinstance(cell, QueueProgress):
+            text = cell.detail()
+        else:
+            item = self.table.item(row, 2)
+            text = item.text() if item else ""
         QApplication.clipboard().setText(text)
         self.statusBar().showMessage("已复制错误信息", 3000)
 
     def copy_cell(self, row, pos):
-        item = self.table.itemAt(pos)
-        if item:
-            QApplication.clipboard().setText(item.text())
+        column = pos.column()
+        cell = self.table.cellWidget(row, column)
+        if isinstance(cell, StatusCell):
+            text = cell.status()
+        elif isinstance(cell, QueueProgress):
+            text = cell.detail()
+        else:
+            item = self.table.itemAt(pos)
+            text = item.text() if item else ""
+        if text:
+            QApplication.clipboard().setText(text)
             self.statusBar().showMessage("已复制单元格内容", 3000)
 
     def copy_task_output(self, row):
@@ -4783,8 +4815,7 @@ class MainWindow(QMainWindow):
     def remove_waiting_task(self, row):
         if row < 0 or row >= self.table.rowCount():
             return
-        status_item = self.table.item(row, 1)
-        status_text = status_item.text() if status_item else ""
+        status_text = self._queue_status(row)
         if status_text == "下载中":
             QMessageBox.information(self, "提示", "正在下载的任务不能直接从队列删除，请先取消。")
             return

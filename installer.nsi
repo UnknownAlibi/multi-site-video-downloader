@@ -7,7 +7,7 @@ Unicode true
 !include "StrFunc.nsh"
 
 !define APP_NAME "多站点视频下载器"
-!define APP_VERSION "1.1.7"
+!define APP_VERSION "1.1.8"
 !define APP_PUBLISHER "UnknownAlibi"
 !define APP_EXE "multi-site-video-downloader.exe"
 !define APP_URL "https://github.com/UnknownAlibi/multi-site-video-downloader"

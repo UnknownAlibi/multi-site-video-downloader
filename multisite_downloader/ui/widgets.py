@@ -26,9 +26,13 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import (
     QAbstractButton,
+    QApplication,
     QFrame,
     QHBoxLayout,
     QLabel,
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
     QVBoxLayout,
     QWidget,
 )
@@ -801,6 +805,17 @@ _STATUS_COLORS_DARK = {
 }
 
 
+class NoTextDelegate(QStyledItemDelegate):
+    """只绘制表格背景和选中态，文字交给 cell widget 自己画。"""
+
+    def paint(self, painter, option, index):
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+        opt.text = ""
+        style = opt.widget.style() if opt.widget else QApplication.style()
+        style.drawControl(QStyle.CE_ItemViewItem, opt, painter, opt.widget)
+
+
 class StatusCell(QWidget):
     """队列表格里的状态胶囊。"""
 
@@ -817,6 +832,9 @@ class StatusCell(QWidget):
         layout.addWidget(self.chip, 0, Qt.AlignVCenter)
         layout.addStretch()
         self.set_status(status)
+
+    def status(self):
+        return self._status
 
     def set_status(self, status):
         key = "完成" if status.startswith("完成") else status
@@ -847,6 +865,9 @@ class QueueProgress(QWidget):
         self._percent = percent
         self._detail = detail or ""
         self.update()
+
+    def detail(self):
+        return self._detail
 
     def apply_theme(self):
         self.update()

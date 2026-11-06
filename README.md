@@ -2,12 +2,12 @@
 
 一个面向 Windows 的开源桌面视频下载工具。项目采用描述性的开源项目命名，不绑定单一站点；入口是 `gui_download_qt.py`，支持 B站、抖音、YouTube、Vimeo、X 等 yt-dlp 可识别的站点。
 
-当前版本：**1.1.7**（2026-11-06）
+当前版本：**1.1.8**（2026-11-06）
 
 ## 下载
 
-- 安装版（推荐）：从 Releases 下载 `multi-site-video-downloader-1.1.7-setup.exe`
-- 免安装版：下载 `multi-site-video-downloader-1.1.7-win64.zip`
+- 安装版（推荐）：从 Releases 下载 `multi-site-video-downloader-1.1.8-setup.exe`
+- 免安装版：下载 `multi-site-video-downloader-1.1.8-win64.zip`
 - 发布页：<https://github.com/UnknownAlibi/multi-site-video-downloader/releases/latest>
 
 安装包使用 NSIS 中文向导，默认安装到当前用户目录，不需要管理员权限，包含开始菜单快捷方式、可选桌面快捷方式和卸载程序。
@@ -123,7 +123,7 @@ GitHub Actions 会在 Windows 上运行同一套测试，见 `.github/workflows/
 
 ## 发布状态
 
-1.1.7 修复下载队列进度文字重叠和输出路径被压缩的问题。148 项自动化测试通过，详见 [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)。B站高清登录、真实外部代理成功路径和干净机器环境仍需在正式发布前补测。
+1.1.8 修复下载队列选中行状态文字重影的问题。148 项自动化测试通过，详见 [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)。B站高清登录、真实外部代理成功路径和干净机器环境仍需在正式发布前补测。
 
 ## 已知限制
 

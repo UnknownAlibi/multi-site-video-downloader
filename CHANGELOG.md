@@ -1,5 +1,25 @@
 # 更新日志
 
+## 1.1.8 - 2026-11-06
+
+### 修复
+
+- 修复选中队列行时状态列出现两份“完成”文字的问题。
+- 状态文字继续保留在表格数据中供统计和操作使用，但由 `NoTextDelegate` 隐藏绘制，只显示状态胶囊。
+- 保持进度百分比、详情文字和路径列布局不变。
+
+### 验证
+
+- 148 项自动化测试通过。
+- 选中完成行渲染检查通过，状态胶囊无重影。
+- 1.1.8 覆盖安装 E 盘，Cookie、设置、历史保留。
+
+### 产物
+
+- `dist/multi-site-video-downloader/multi-site-video-downloader.exe`
+- `dist/multi-site-video-downloader-1.1.8-win64.zip`
+- `dist/multi-site-video-downloader-1.1.8-setup.exe`
+
 ## 1.1.7 - 2026-11-06
 
 ### 修复
