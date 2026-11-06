@@ -1068,9 +1068,10 @@ class MainWindow(QMainWindow):
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Fixed)
         self.table.setColumnWidth(1, 92)
-        self.table.setColumnWidth(2, 176)
+        self.table.setColumnWidth(2, 190)
+        self.table.setColumnWidth(3, 300)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setAlternatingRowColors(False)
@@ -4181,6 +4182,9 @@ class MainWindow(QMainWindow):
             card.setEnabled(enabled)
 
     def set_cell(self, row, col, text):
+        # 进度列由 QueueProgress 自绘；底层 item 文字会和它重影。
+        if col == 2 and self.table.cellWidget(row, col) is not None:
+            return
         item = self.table.item(row, col)
         if item:
             item.setText(text)
@@ -4198,6 +4202,8 @@ class MainWindow(QMainWindow):
             item = self.table.item(row, column)
             if item is not None:
                 item.setForeground(QColor(0, 0, 0, 0))
+                if column == 2:
+                    item.setText("")
 
     def _set_row_status(self, row, status):
         cell = self.table.cellWidget(row, 1)

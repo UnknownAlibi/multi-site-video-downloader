@@ -873,10 +873,18 @@ class QueueProgress(QWidget):
                 painter.setBrush(QBrush(gradient))
                 painter.drawRoundedRect(fill, 2.5, 2.5)
 
-        detail_rect = QRectF(2, 14, width, 16)
+        detail_rect = QRectF(2, 14, max(width - 44, 0), 16)
         painter.setPen(QColor(theme_get("text_soft")))
         font = QFont("Microsoft YaHei UI", 7)
         painter.setFont(font)
-        text = QFontMetrics(font).elidedText(self._detail, Qt.ElideRight, int(width))
+        text = QFontMetrics(font).elidedText(
+            self._detail, Qt.ElideRight, int(detail_rect.width())
+        )
         painter.drawText(detail_rect, Qt.AlignLeft | Qt.AlignVCenter, text)
+        if self._percent >= 0:
+            painter.drawText(
+                QRectF(width - 40, 14, 40, 16),
+                Qt.AlignRight | Qt.AlignVCenter,
+                f"{int(self._percent)}%",
+            )
         painter.end()
