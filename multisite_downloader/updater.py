@@ -191,7 +191,7 @@ def download_update(info, settings=None, dest_dir=None, progress=None, cancelled
 
 
 def is_installed_app():
-    """判断当前运行的是否是 Inno Setup 安装版。"""
+    """判断当前运行的是否是安装版（NSIS 或旧版 Inno，共用卸载注册表项）。"""
     if os.name != "nt":
         return False
     try:
@@ -218,7 +218,8 @@ def is_installed_app():
 
 
 def installer_arguments():
-    return ["/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS"]
+    # NSIS 的静默参数是 /S；安装包同时兼容旧版 Inno 的 /SILENT。
+    return ["/S"]
 
 
 def should_auto_check(settings, interval_hours=24):

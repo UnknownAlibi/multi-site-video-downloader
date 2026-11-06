@@ -198,3 +198,7 @@ bilibili_settings.json
 
 cookies/
 douyin_cookies.txt
+
+# NSIS 生成图
+installer_header.bmp
+installer_welcome.bmp

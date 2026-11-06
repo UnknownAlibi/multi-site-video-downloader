@@ -2,15 +2,15 @@
 
 一个面向 Windows 的开源桌面视频下载工具。项目采用描述性的开源项目命名，不绑定单一站点；入口是 `gui_download_qt.py`，支持 B站、抖音、YouTube、Vimeo、X 等 yt-dlp 可识别的站点。
 
-当前版本：**1.1.5**（2026-11-06）
+当前版本：**1.1.6**（2026-11-06）
 
 ## 下载
 
-- 安装版（推荐）：从 Releases 下载 `multi-site-video-downloader-1.1.5-setup.exe`
-- 免安装版：下载 `multi-site-video-downloader-1.1.5-win64.zip`
+- 安装版（推荐）：从 Releases 下载 `multi-site-video-downloader-1.1.6-setup.exe`
+- 免安装版：下载 `multi-site-video-downloader-1.1.6-win64.zip`
 - 发布页：<https://github.com/UnknownAlibi/multi-site-video-downloader/releases/latest>
 
-安装包默认安装到当前用户目录，不需要管理员权限，包含开始菜单快捷方式、可选桌面快捷方式和卸载程序。
+安装包使用 NSIS 中文向导，默认安装到当前用户目录，不需要管理员权限，包含开始菜单快捷方式、可选桌面快捷方式和卸载程序。
 
 ## 功能
 
@@ -114,15 +114,16 @@ GitHub Actions 会在 Windows 上运行同一套测试，见 `.github/workflows/
 4. 产物位于 `dist/multi-site-video-downloader/`，运行 `multi-site-video-downloader.exe`。
 5. 发行时打包整个目录（含 `_internal`）。用户数据写在 exe 同级；ffmpeg 可放在 exe 同级覆盖 `_internal/ffmpeg.exe`。
 6. 可运行 `multi-site-video-downloader.exe --self-test` 检查依赖、ffmpeg、浏览器与界面构建，结果写入同级 `self_test.log`。
-7. 安装 Inno Setup 6。
-8. 编译安装包：`& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" installer.iss`。
-9. 安装包输出到 `dist/multi-site-video-downloader-<版本>-setup.exe`。
+7. 安装 NSIS 3.x，并把 `makensis.exe` 加入 PATH 或使用完整路径。
+8. 生成安装向导图片：`py make_installer_assets.py`。
+9. 编译安装包：`makensis installer.nsi`。
+10. 安装包输出到 `dist/multi-site-video-downloader-<版本>-setup.exe`。
 
 版本号定义在 `multisite_downloader/__init__.py`，打包版本资源在 `version_info.txt`。
 
 ## 发布状态
 
-1.1.5 新增程序内检查更新：从 GitHub Release 获取新版本，下载安装包并校验 SHA256，安装版可直接覆盖升级。147 项自动化测试通过，详见 [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)。B站高清登录、真实外部代理成功路径和干净机器环境仍需在正式发布前补测。
+1.1.6 将安装器从 Inno Setup 切换为 NSIS + MUI2 中文向导，并保留程序内更新。148 项自动化测试通过，详见 [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)。B站高清登录、真实外部代理成功路径和干净机器环境仍需在正式发布前补测。
 
 ## 已知限制
 

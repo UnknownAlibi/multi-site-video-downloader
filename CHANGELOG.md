@@ -1,5 +1,29 @@
 # 更新日志
 
+## 1.1.6 - 2026-11-06
+
+### 安装器
+
+- 安装程序从 Inno Setup 切换为 NSIS 3 + Modern UI 2。
+- 安装界面改为简体中文，加入品牌欢迎图、图标和页脚版本。
+- 保留开始菜单、可选桌面快捷方式和卸载程序。
+- 继续使用同一卸载注册表项，支持从 1.1.5 覆盖升级。
+- 覆盖升级时保留 `settings.json`、Cookie、下载历史和用户资源。
+- 程序内更新改用 NSIS 静默参数 `/S`；安装器同时兼容旧版 Inno 更新器传入的 `/SILENT`。
+
+### 验证
+
+- 148 项自动化测试通过。
+- NSIS 静默安装、安装后自检、卸载通过。
+- 中文和空格路径安装、旧版 Inno 覆盖升级验证通过。
+- 安装包版本资源为 `1.1.6.0`，界面语言为简体中文。
+
+### 产物
+
+- `dist/multi-site-video-downloader/multi-site-video-downloader.exe`
+- `dist/multi-site-video-downloader-1.1.6-win64.zip`
+- `dist/multi-site-video-downloader-1.1.6-setup.exe`
+
 ## 1.1.5 - 2026-11-06
 
 ### 新增

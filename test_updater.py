@@ -1,6 +1,7 @@
 """程序内更新的无网络单元测试。"""
 
 from multisite_downloader.updater import (
+    installer_arguments,
     is_newer,
     parse_sha256,
     parse_version,
@@ -58,6 +59,10 @@ def test_parse_sha256():
     value = "A" * 64
     assert parse_sha256(f"{value}  app.exe") == "a" * 64
     assert parse_sha256("not a hash") == ""
+
+
+def test_installer_arguments_for_nsis():
+    assert installer_arguments() == ["/S"]
 
 
 def test_should_auto_check():
