@@ -168,6 +168,8 @@ DEFAULT_SETTINGS = {
     "fx_neon": True,
     "fx_sound": True,
     "theme": "light",
+    "auto_check_update": True,
+    "update_last_check": 0,
 }
 
 

@@ -1,5 +1,27 @@
 # 更新日志
 
+## 1.1.5 - 2026-11-06
+
+### 新增
+
+- 设置页新增「检查更新」和「启动时自动检查更新」。
+- 自动请求 GitHub 最新 Release，比较版本并显示更新说明。
+- 下载 `setup.exe` 到 `updates/`，使用 Release 中的 SHA256 文件校验。
+- 安装版可以直接关闭程序并覆盖升级；免安装版提示手动替换。
+- 下载更新前检查是否有下载任务，避免中断正在进行的下载。
+
+### 验证
+
+- 147 项自动化测试通过。
+- 实际请求 GitHub API 成功，能识别 1.1.4 安装包和校验文件。
+- 更新检查、版本比较、资产选择、SHA256 解析均有单元测试。
+
+### 产物
+
+- `dist/multi-site-video-downloader/multi-site-video-downloader.exe`
+- `dist/multi-site-video-downloader-1.1.5-win64.zip`
+- `dist/multi-site-video-downloader-1.1.5-setup.exe`
+
 ## 1.1.4 - 2026-11-04
 
 ### 修复

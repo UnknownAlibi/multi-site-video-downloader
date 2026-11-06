@@ -1,5 +1,5 @@
 #define MyAppName "多站点视频下载器"
-#define MyAppVersion "1.1.4"
+#define MyAppVersion "1.1.5"
 #define MyAppPublisher "UnknownAlibi"
 #define MyAppExeName "multi-site-video-downloader.exe"
 #define MyAppUrl "https://github.com/UnknownAlibi/multi-site-video-downloader"
@@ -32,7 +32,7 @@ CloseApplications=yes
 RestartApplications=no
 SetupLogging=yes
 UsePreviousAppDir=yes
-VersionInfoVersion=1.1.4.0
+VersionInfoVersion=1.1.5.0
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} 安装程序
 VersionInfoProductName={#MyAppName}

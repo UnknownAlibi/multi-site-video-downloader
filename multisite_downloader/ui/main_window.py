@@ -2,6 +2,7 @@
 
 import csv
 import json
+import os
 import platform
 import random
 import shutil
@@ -11,16 +12,17 @@ import webbrowser
 from pathlib import Path
 from urllib.parse import urlparse
 
-from PyQt5.QtCore import QSize, QTimer, Qt
+from PyQt5.QtCore import QProcess, QSize, QTimer, Qt
 from PyQt5.QtGui import QColor, QIcon, QKeySequence, QPixmap
 from PyQt5.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QFileDialog,
     QFrame, QGridLayout, QHBoxLayout, QHeaderView, QInputDialog, QLabel, QLineEdit,
-    QMainWindow, QMenu, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton,
-    QScrollArea, QShortcut, QSizeGrip, QSpinBox, QStackedWidget, QSystemTrayIcon,
-    QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
+    QMainWindow, QMenu, QMessageBox, QPlainTextEdit, QProgressBar, QProgressDialog,
+    QPushButton, QScrollArea, QShortcut, QSizeGrip, QSpinBox, QStackedWidget,
+    QSystemTrayIcon, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 )
 
+from .. import __version__
 from ..bilibili import invalidate_bili_login_cache
 from ..config import (
     ASSETS_DIR,
@@ -62,6 +64,13 @@ from ..sites import (
     detect_site,
     site_label,
 )
+from ..updater import (
+    RELEASES_URL,
+    installer_arguments,
+    is_installed_app,
+    is_newer,
+    should_auto_check,
+)
 from ..urls import (
     extract_aid,
     extract_bvid,
@@ -80,6 +89,7 @@ from ..workers.cookie import CookieCheckWorker
 from ..workers.download import DownloadWorker
 from ..workers.preview import PreviewWorker
 from ..workers.thumbnail import ThumbnailWorker
+from ..workers.update import UpdateCheckWorker, UpdateDownloadWorker
 from .effects import (
     DroppablePlainTextEdit,
     SakuraOverlay,
@@ -118,6 +128,11 @@ class MainWindow(QMainWindow):
         self.preview_worker = None
         self.cookie_check_worker = None
         self.proxy_test_worker = None
+        self.update_check_worker = None
+        self.update_download_worker = None
+        self.update_progress_dialog = None
+        self._last_update_check_was_manual = False
+        self._pending_update_info = None
         self.preview_request_id = 0
         self._force_quit = False
         self.preview_pending = False
@@ -180,6 +195,11 @@ class MainWindow(QMainWindow):
         self._setup_shortcuts()
         self.statusBar().showMessage("就绪")
         self.sound_player.play("click")
+        if (
+            "--self-test" not in sys.argv
+            and not os.environ.get("PYTEST_CURRENT_TEST")
+        ):
+            QTimer.singleShot(5000, self._maybe_auto_check_updates)
 
     def _app_icon_path(self):
         """返回应用图标路径：优先用户提供的 logo，其次内置 icon。"""
@@ -1968,7 +1988,6 @@ class MainWindow(QMainWindow):
 
         # 关于与诊断
         about_card, about_layout = self.create_card("关于")
-        from .. import __version__
 
         about_title = QLabel(f"多站点视频下载器 v{__version__}")
         about_title.setObjectName("sectionLabel")
@@ -1978,6 +1997,26 @@ class MainWindow(QMainWindow):
         )
         about_desc.setObjectName("hintText")
         about_desc.setWordWrap(True)
+
+        update_row = QHBoxLayout()
+        update_row.setSpacing(8)
+        self.update_status_label = QLabel(f"当前版本 v{__version__}")
+        self.update_status_label.setObjectName("hintText")
+        self.check_update_btn = QPushButton("检查更新")
+        self.check_update_btn.setObjectName("secondaryBtn")
+        self.check_update_btn.clicked.connect(
+            lambda: self._check_updates(silent=False)
+        )
+        self.auto_update_check = QCheckBox("启动时自动检查更新")
+        self.auto_update_check.setChecked(
+            bool(self.settings.get("auto_check_update", True))
+        )
+        self.auto_update_check.stateChanged.connect(self._on_auto_update_changed)
+        update_row.addWidget(self.update_status_label, 1)
+        update_row.addWidget(self.check_update_btn)
+        update_row.addWidget(self.auto_update_check)
+        about_layout.addLayout(update_row)
+
         about_buttons = QHBoxLayout()
         self.copy_diag_btn = QPushButton("复制诊断信息")
         self.copy_diag_btn.setObjectName("secondaryBtn")
@@ -2157,6 +2196,221 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("诊断信息已复制", 4000)
         self.append_log("已复制诊断信息")
 
+    # ---------- 程序更新 ----------
+
+    def _on_auto_update_changed(self):
+        if getattr(self, "_loading_settings", False):
+            return
+        self.settings["auto_check_update"] = self.auto_update_check.isChecked()
+        ok, err = save_settings(self.collect_settings())
+        if not ok:
+            self.statusBar().showMessage(f"设置保存失败: {err}", 5000)
+        elif self.auto_update_check.isChecked():
+            self._check_updates(silent=True)
+
+    def _maybe_auto_check_updates(self):
+        if self.update_check_worker is not None:
+            return
+        if should_auto_check(self.settings):
+            self._check_updates(silent=True)
+
+    def _check_updates(self, silent=False):
+        if self.update_check_worker is not None:
+            if not silent:
+                self.statusBar().showMessage("正在检查更新，请稍候...", 3000)
+            return
+        self._last_update_check_was_manual = not silent
+        self.update_status_label.setText("正在检查更新...")
+        worker = UpdateCheckWorker(self.collect_settings(), self)
+        worker.result.connect(self._on_update_check_result)
+        worker.failed.connect(self._on_update_check_failed)
+        worker.finished.connect(self._on_update_check_finished)
+        self.update_check_worker = worker
+        if not silent:
+            self.statusBar().showMessage("正在检查更新...", 3000)
+        worker.start()
+
+    def _on_update_check_result(self, info):
+        latest = info.get("version") or ""
+        self.settings["update_last_check"] = time.time()
+        save_settings(self.collect_settings())
+        if is_newer(latest, __version__):
+            self.update_status_label.setText(f"发现新版本 v{latest}")
+            self._show_update_dialog(info)
+            return
+        self.update_status_label.setText(f"当前已是最新版本 v{__version__}")
+        if self._last_update_check_was_manual:
+            QMessageBox.information(
+                self,
+                "检查更新",
+                f"当前已是最新版本。\n\n版本：v{__version__}",
+            )
+
+    def _on_update_check_failed(self, message):
+        self.update_status_label.setText("检查更新失败")
+        self.append_log(f"检查更新失败: {message}")
+        if self._last_update_check_was_manual:
+            QMessageBox.warning(
+                self,
+                "检查更新失败",
+                f"{message}\n\n"
+                "GitHub 访问可能需要代理。请在设置中配置代理后重试，"
+                "或直接打开 Release 页面手动下载。",
+            )
+
+    def _on_update_check_finished(self):
+        if self.sender() is self.update_check_worker:
+            self.update_check_worker = None
+
+    def _show_update_dialog(self, info):
+        latest = info.get("version") or ""
+        notes = (info.get("notes") or "").strip()
+        box = QMessageBox(self)
+        box.setWindowTitle("发现新版本")
+        box.setIcon(QMessageBox.Information)
+        box.setText(f"发现新版本 v{latest}")
+        box.setInformativeText(
+            f"当前版本：v{__version__}\n\n"
+            + (
+                "当前为免安装版，无法自动覆盖安装。"
+                "建议打开 Release 下载新版 zip 手动替换。\n\n"
+                if not is_installed_app()
+                else ""
+            )
+            + "下载安装包并校验 SHA256 后，可以直接启动安装程序。"
+        )
+        if notes:
+            box.setDetailedText(notes[:4000])
+        install_btn = box.addButton(
+            "下载并安装" if is_installed_app() else "下载安装包",
+            QMessageBox.AcceptRole,
+        )
+        release_btn = box.addButton("打开 Release", QMessageBox.ActionRole)
+        box.addButton("稍后", QMessageBox.RejectRole)
+        box.exec_()
+        clicked = box.clickedButton()
+        if clicked is install_btn:
+            self._download_update(info)
+        elif clicked is release_btn:
+            webbrowser.open(info.get("html_url") or RELEASES_URL)
+
+    def _download_update(self, info):
+        if self.update_download_worker is not None:
+            return
+        if self.worker is not None:
+            QMessageBox.warning(
+                self,
+                "暂时无法更新",
+                "当前还有下载任务在运行。\n"
+                "请等待任务完成或取消任务后再安装更新。",
+            )
+            return
+        dialog = QProgressDialog("正在下载更新...", "取消", 0, 100, self)
+        dialog.setWindowTitle("下载更新")
+        dialog.setWindowModality(Qt.WindowModal)
+        dialog.setMinimumDuration(0)
+        dialog.setAutoClose(False)
+        dialog.setAutoReset(False)
+        dialog.setValue(0)
+        self._pending_update_info = info
+        worker = UpdateDownloadWorker(info, self.collect_settings(), parent=self)
+        dialog.canceled.connect(worker.cancel)
+        worker.progress.connect(self._on_update_download_progress)
+        worker.downloaded.connect(self._on_update_downloaded)
+        worker.failed.connect(self._on_update_download_failed)
+        worker.finished.connect(self._on_update_download_finished)
+        worker.failed.connect(self._on_update_download_finished)
+        self.update_download_worker = worker
+        self.update_progress_dialog = dialog
+        dialog.show()
+        worker.start()
+
+    def _on_update_download_progress(self, percent, detail):
+        dialog = self.update_progress_dialog
+        if dialog is None:
+            return
+        if percent < 0:
+            dialog.setRange(0, 0)
+            dialog.setLabelText(f"正在下载更新...\n{detail}")
+        else:
+            dialog.setRange(0, 100)
+            dialog.setValue(percent)
+            dialog.setLabelText(f"正在下载更新... {percent}%\n{detail}")
+
+    def _on_update_downloaded(self, path):
+        if self.update_progress_dialog is not None:
+            self.update_progress_dialog.close()
+            self.update_progress_dialog = None
+        self.update_status_label.setText("安装包已下载并校验通过")
+        if not is_installed_app():
+            box = QMessageBox(self)
+            box.setWindowTitle("更新已下载")
+            box.setIcon(QMessageBox.Information)
+            box.setText("安装包已下载并通过 SHA256 校验。")
+            box.setInformativeText(
+                "当前是免安装版，不能自动覆盖安装。\n"
+                "运行该 setup 会安装到默认目录；"
+                "如果要继续使用免安装版，请到 Release 下载新版 zip 手动替换。"
+            )
+            open_btn = box.addButton("打开下载目录", QMessageBox.AcceptRole)
+            release_btn = box.addButton("打开 Release", QMessageBox.ActionRole)
+            box.addButton("稍后", QMessageBox.RejectRole)
+            box.exec_()
+            if box.clickedButton() is open_btn:
+                open_path_in_explorer(str(Path(path).parent))
+            elif box.clickedButton() is release_btn:
+                webbrowser.open(RELEASES_URL)
+            return
+        new_version = (self._pending_update_info or {}).get("version") or "新版本"
+        ret = QMessageBox.question(
+            self,
+            "安装更新",
+            "安装包已下载并通过 SHA256 校验。\n\n"
+            f"安装程序会关闭当前程序，并覆盖升级到 v{new_version}。\n"
+            "设置、Cookie 和下载历史会保留。\n\n现在安装吗？",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes,
+        )
+        if ret != QMessageBox.Yes:
+            self.statusBar().showMessage("安装包已保留，可稍后手动安装", 5000)
+            return
+        ok, err = save_settings(self.collect_settings())
+        if not ok:
+            QMessageBox.warning(self, "保存设置失败", err)
+            return
+        started = QProcess.startDetached(str(path), installer_arguments())
+        if not started:
+            QMessageBox.warning(
+                self,
+                "启动安装程序失败",
+                f"无法启动安装程序：\n{path}\n\n请手动运行该文件。",
+            )
+            return
+        self._force_quit = True
+        if hasattr(self, "tray_icon"):
+            self.tray_icon.hide()
+        QApplication.quit()
+
+    def _on_update_download_failed(self, message):
+        cancelled = bool(
+            self.update_download_worker is not None
+            and self.update_download_worker.is_cancelled()
+        )
+        if self.update_progress_dialog is not None:
+            self.update_progress_dialog.close()
+            self.update_progress_dialog = None
+        if cancelled:
+            self.update_status_label.setText("已取消更新下载")
+            self.append_log("已取消更新下载")
+            return
+        self.update_status_label.setText("更新下载失败")
+        self.append_log(f"更新下载失败: {message}")
+        QMessageBox.warning(self, "更新下载失败", message)
+
+    def _on_update_download_finished(self):
+        if self.sender() is self.update_download_worker:
+            self.update_download_worker = None
+
     def _test_proxy(self):
         if self.proxy_test_worker is not None and self.proxy_test_worker.isRunning():
             return
@@ -2224,6 +2478,9 @@ class MainWindow(QMainWindow):
             self.sakura_check.setChecked(bool(self.settings.get("fx_sakura", True)))
             self.neon_check.setChecked(bool(self.settings.get("fx_neon", True)))
             self.sound_check.setChecked(bool(self.settings.get("fx_sound", True)))
+            self.auto_update_check.setChecked(
+                bool(self.settings.get("auto_check_update", True))
+            )
         finally:
             self._loading_settings = False
         self.apply_fx_settings()
@@ -2276,6 +2533,7 @@ class MainWindow(QMainWindow):
             "fx_neon": self.neon_check.isChecked(),
             "fx_sound": self.sound_check.isChecked(),
             "theme": self.theme_combo.currentData() or "light",
+            "auto_check_update": self.auto_update_check.isChecked(),
         })
         return settings
 

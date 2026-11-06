@@ -2,12 +2,12 @@
 
 一个面向 Windows 的开源桌面视频下载工具。项目采用描述性的开源项目命名，不绑定单一站点；入口是 `gui_download_qt.py`，支持 B站、抖音、YouTube、Vimeo、X 等 yt-dlp 可识别的站点。
 
-当前版本：**1.1.4**（2026-11-04）
+当前版本：**1.1.5**（2026-11-06）
 
 ## 下载
 
-- 安装版（推荐）：从 Releases 下载 `multi-site-video-downloader-1.1.4-setup.exe`
-- 免安装版：下载 `multi-site-video-downloader-1.1.4-win64.zip`
+- 安装版（推荐）：从 Releases 下载 `multi-site-video-downloader-1.1.5-setup.exe`
+- 免安装版：下载 `multi-site-video-downloader-1.1.5-win64.zip`
 - 发布页：<https://github.com/UnknownAlibi/multi-site-video-downloader/releases/latest>
 
 安装包默认安装到当前用户目录，不需要管理员权限，包含开始菜单快捷方式、可选桌面快捷方式和卸载程序。
@@ -24,6 +24,7 @@
 - 下载历史支持搜索、状态筛选、文件缺失筛选、导出 CSV/JSON 和重新下载。
 - 支持全局下载限速、分片并发、任务并发、编码偏好、音频质量偏好和文件名模板。
 - Cookie 库按域名保存为 `cookies/<域名>.txt`，支持查看、打开和删除。
+- 设置页支持检查 GitHub 更新；安装版下载并校验 SHA256 后可覆盖升级。
 - B站扫码登录一次后保存 Cookie；解析或下载时若 Cookie 无效，会静默尝试复用浏览器登录。
 - 抖音在无头 Chrome/Edge 中解析，不弹解析窗口；登录一次后复用浏览器配置目录。
 - YouTube 没有配置 Cookie 时，可按设置静默尝试复用浏览器登录；失败时继续无 Cookie 解析。
@@ -121,7 +122,7 @@ GitHub Actions 会在 Windows 上运行同一套测试，见 `.github/workflows/
 
 ## 发布状态
 
-1.1.4 修复 B站扫码登录后登录状态仍显示“未登录”的问题，并优化窄窗口下的文字和卡片布局。142 项自动化测试通过，详见 [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)。B站高清登录、真实外部代理成功路径和干净机器环境仍需在正式发布前补测。
+1.1.5 新增程序内检查更新：从 GitHub Release 获取新版本，下载安装包并校验 SHA256，安装版可直接覆盖升级。147 项自动化测试通过，详见 [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)。B站高清登录、真实外部代理成功路径和干净机器环境仍需在正式发布前补测。
 
 ## 已知限制
 
